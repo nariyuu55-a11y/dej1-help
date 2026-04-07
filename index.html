@@ -25,7 +25,7 @@
   const auth = firebase.auth();
   const provider = new firebase.auth.GoogleAuthProvider();
 
-  window._firebaseSignIn = () => auth.signInWithPopup(provider);
+  window._firebaseSignIn = () => auth.signInWithRedirect(provider);
   window._firebaseSignOut = () => auth.signOut();
 
   // 認証状態を監視：未ログインなら即ブロック
