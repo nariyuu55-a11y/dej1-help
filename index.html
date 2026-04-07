@@ -4,84 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DEJ1 ヘルプ自動計算ツール</title>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAEBX1VTaNWGrdfmlo0l7iheDvTT6FNQCI",
-    authDomain: "dej1-help.firebaseapp.com",
-    projectId: "dej1-help",
-    storageBucket: "dej1-help.firebasestorage.app",
-    messagingSenderId: "619215110188",
-    appId: "1:619215110188:web:46a046635e9e83e76c5189"
-  };
-
   const ALLOWED_EMAILS = [
     "skip.llc.manager@gmail.com",
     "nariyuu55@gmail.com",
   ];
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const provider = new firebase.auth.GoogleAuthProvider();
-
-  // リダイレクト後の結果を処理
-  auth.getRedirectResult().then(result => {
-    // リダイレクト後は onAuthStateChanged が自動で処理
-  }).catch(err => {
-    console.error('redirect error', err);
-  });
-
-  window._firebaseSignIn = () => auth.signInWithRedirect(provider);
-  window._firebaseSignOut = () => auth.signOut();
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      if (!ALLOWED_EMAILS.includes(user.email)) {
-        auth.signOut();
-        showAuthScreen('denied', user.email);
-        return;
-      }
-      showApp(user);
+  // Google認証成功時のコールバック
+  function handleCredentialResponse(response) {
+    // JWTをデコードしてメールアドレスを取得
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email;
+    if (ALLOWED_EMAILS.includes(email)) {
+      // 認証成功：セッションに保存してアプリを表示
+      sessionStorage.setItem('user_email', email);
+      sessionStorage.setItem('user_name', payload.name || email);
+      sessionStorage.setItem('user_pic', payload.picture || '');
+      showApp(email, payload.name, payload.picture);
     } else {
-      showAuthScreen('login', null);
-    }
-  });
-
-  function showAuthScreen(mode, email) {
-    const s = document.getElementById('authScreen');
-    const r = document.getElementById('appRoot');
-    if (s) s.style.display = 'flex';
-    if (r) r.style.display = 'none';
-    const msg = document.getElementById('authMsg');
-    const btn = document.getElementById('authBtn');
-    if (mode === 'denied') {
-      if (msg) msg.innerHTML =
-        `<span style="color:#ff5555">⚠ アクセス権限がありません</span><br>
-         <span style="font-size:11px;color:#5a5a72">${email} はアクセスが許可されていません。<br>管理者にお問い合わせください。</span>`;
-      if (btn) btn.style.display = 'none';
-    } else {
-      if (msg) msg.innerHTML = `このツールはメンバー限定です。<br>Googleアカウントでログインしてください。`;
-      if (btn) {
-        btn.style.display = 'block';
-        // ボタンに直接クリックイベントを設定（DOMContentLoaded待ちをやめる）
-        btn.onclick = () => auth.signInWithRedirect(provider);
-      }
+      showDenied(email);
     }
   }
 
-  function showApp(user) {
-    const s = document.getElementById('authScreen');
-    const r = document.getElementById('appRoot');
-    if (s) s.style.display = 'none';
-    if (r) r.style.display = 'block';
+  function showApp(email, name, pic) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
     const info = document.getElementById('userInfo');
     if (info) info.innerHTML =
-      `<img src="${user.photoURL||''}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px">
-       <span style="font-size:11px;color:#9090a8">${user.email}</span>`;
+      `${pic ? `<img src="${pic}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px">` : ''}
+       <span style="font-size:11px;color:#9090a8">${email}</span>`;
     const logout = document.getElementById('logoutBtn');
-    if (logout) logout.onclick = () => auth.signOut();
+    if (logout) logout.onclick = () => {
+      sessionStorage.clear();
+      location.reload();
+    };
   }
+
+  function showDenied(email) {
+    document.getElementById('authMsg').innerHTML =
+      `<span style="color:#ff5555">⚠ アクセス権限がありません</span><br>
+       <span style="font-size:11px;color:#5a5a72">${email} はアクセスが許可されていません。<br>管理者にお問い合わせください。</span>`;
+    document.getElementById('googleBtn').style.display = 'none';
+  }
+
+  // ページ読み込み時にセッションを確認
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedEmail = sessionStorage.getItem('user_email');
+    if (savedEmail && ALLOWED_EMAILS.includes(savedEmail)) {
+      showApp(
+        savedEmail,
+        sessionStorage.getItem('user_name'),
+        sessionStorage.getItem('user_pic')
+      );
+    }
+    // Google Identity Services の初期化
+    if (window.google) {
+      initGoogle();
+    } else {
+      document.querySelector('script[src*="gsi"]').addEventListener('load', initGoogle);
+    }
+  });
+
+  function initGoogle() {
+    google.accounts.id.initialize({
+      client_id: '619215110188-auto.apps.googleusercontent.com',
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: false,
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('googleBtn'),
+      {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        locale: 'ja',
+        width: 280,
+      }
+    );
+  }
+</script>
+
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -601,10 +605,7 @@
       <div class="auth-logo-text">DEJ1 HELP DISPATCH</div>
     </div>
     <div class="auth-msg" id="authMsg">このツールはメンバー限定です。<br>Googleアカウントでログインしてください。</div>
-    <button class="auth-btn" id="authBtn">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
-      Googleアカウントでログイン
-    </button>
+    <div id="googleBtn" style="display:flex;justify-content:center;margin-top:8px"></div>
   </div>
 </div>
 
