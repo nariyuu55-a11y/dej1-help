@@ -150,7 +150,25 @@
     gap: 20px;
   }
 
-  .content { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .content {
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--bg);
+    min-height: calc(100vh - 53px);
+  }
+
+  #pagCalc > .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
 
   .panel {
     background: var(--bg2);
@@ -625,8 +643,7 @@
   <span id="dateLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px">—</span>
 </div>
 
-<div id="pagCalc" class="page active" style="display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 53px)">
-<div class="main" id="calcLayout">
+<div id="pagCalc" style="display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 53px)">
   <div class="sidebar">
 
     <div>
@@ -689,7 +706,6 @@
       <div class="es-label">アサイン表をアップロードして計算を実行してください</div>
     </div>
   </div>
-</div>
 </div><!-- /pagCalc -->
 
 <!-- 履歴ページ -->
