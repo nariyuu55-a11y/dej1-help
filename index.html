@@ -25,10 +25,16 @@
   const auth = firebase.auth();
   const provider = new firebase.auth.GoogleAuthProvider();
 
+  // リダイレクト後の結果を処理
+  auth.getRedirectResult().then(result => {
+    // リダイレクト後は onAuthStateChanged が自動で処理
+  }).catch(err => {
+    console.error('redirect error', err);
+  });
+
   window._firebaseSignIn = () => auth.signInWithRedirect(provider);
   window._firebaseSignOut = () => auth.signOut();
 
-  // 認証状態を監視：未ログインなら即ブロック
   auth.onAuthStateChanged(user => {
     if (user) {
       if (!ALLOWED_EMAILS.includes(user.email)) {
@@ -56,7 +62,11 @@
       if (btn) btn.style.display = 'none';
     } else {
       if (msg) msg.innerHTML = `このツールはメンバー限定です。<br>Googleアカウントでログインしてください。`;
-      if (btn) btn.style.display = 'block';
+      if (btn) {
+        btn.style.display = 'block';
+        // ボタンに直接クリックイベントを設定（DOMContentLoaded待ちをやめる）
+        btn.onclick = () => auth.signInWithRedirect(provider);
+      }
     }
   }
 
@@ -69,15 +79,9 @@
     if (info) info.innerHTML =
       `<img src="${user.photoURL||''}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px">
        <span style="font-size:11px;color:#9090a8">${user.email}</span>`;
-  }
-
-  // ボタンのイベントはDOM読み込み後にセット
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('authBtn');
     const logout = document.getElementById('logoutBtn');
-    if (btn) btn.onclick = () => window._firebaseSignIn();
-    if (logout) logout.onclick = () => window._firebaseSignOut();
-  });
+    if (logout) logout.onclick = () => auth.signOut();
+  }
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -620,7 +624,7 @@
   <span id="dateLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px">—</span>
 </div>
 
-<div id="pagCalc" class="page active" style="display:contents">
+<div id="pagCalc" class="page active" style="display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 53px)">
 <div class="main" id="calcLayout">
   <div class="sidebar">
 
@@ -1137,14 +1141,28 @@ function renderResult(cars, overDAs, supplementDAs, allTargets, numCars, carReas
 
 // ===== TAB =====
 function showTab(tab) {
-  ['calc','history','stats'].forEach(t => {
-    document.getElementById('pagCalc').style.display    = t==='calc'    ? 'contents' : 'none';
-    document.getElementById('pagHistory').style.display = t==='history' ? 'block'    : 'none';
-    document.getElementById('pagStats').style.display   = t==='stats'   ? 'block'    : 'none';
-    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  const calcEl    = document.getElementById('pagCalc');
+  const historyEl = document.getElementById('pagHistory');
+  const statsEl   = document.getElementById('pagStats');
+
+  // 全部隠す
+  if (calcEl)    { calcEl.style.display    = 'none'; }
+  if (historyEl) { historyEl.style.display = 'none'; }
+  if (statsEl)   { statsEl.style.display   = 'none'; }
+
+  // 選択したタブだけ表示
+  if (tab === 'calc'    && calcEl)    calcEl.style.display    = 'grid';
+  if (tab === 'history' && historyEl) historyEl.style.display = 'block';
+  if (tab === 'stats'   && statsEl)   statsEl.style.display   = 'block';
+
+  // ナビボタンのactive切り替え
+  ['Calc','History','Stats'].forEach(t => {
+    const btn = document.getElementById('nav' + t);
+    if (btn) btn.classList.toggle('active', t.toLowerCase() === tab);
   });
-  if (tab==='history') renderHistory();
-  if (tab==='stats')   renderStats();
+
+  if (tab === 'history') renderHistory();
+  if (tab === 'stats')   renderStats();
 }
 
 // ===== MODAL =====
