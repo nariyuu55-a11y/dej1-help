@@ -726,38 +726,130 @@
 <!-- 記録モーダル -->
 <div id="recordModal" class="record-modal-bg" style="display:none" onclick="if(event.target===this)closeModal()">
   <div class="record-modal">
-    <h2>今日の結果を記録する</h2>
+    <h2>📝 今日の結果を記録する</h2>
+
+    <!-- 基本情報 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">基本情報</div>
     <div class="form-row">
       <div class="form-label">日付</div>
       <input class="form-input" id="recDate" type="date">
     </div>
     <div class="form-row">
-      <div class="form-label">最終的なヘルプ台数</div>
+      <div class="form-label">配送タイプ</div>
+      <select class="form-input" id="recType">
+        <option value="CX">CX（午前）</option>
+        <option value="MX">MX（午後）</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-label">天気</div>
+      <select class="form-input" id="recWeather">
+        <option value="sunny">☀️ 晴れ</option>
+        <option value="cloudy">☁️ 曇り</option>
+        <option value="rainy">🌧️ 雨</option>
+        <option value="heavy_rain">⛈️ 大雨</option>
+        <option value="snow">❄️ 雪</option>
+      </select>
+    </div>
+
+    <!-- ヘルプ車の差分 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">ヘルプ車の差分</div>
+    <div class="form-row">
+      <div class="form-label">システム提案の台数</div>
+      <input class="form-input" id="recSystemCars" type="text" readonly style="color:var(--text3)">
+    </div>
+    <div class="form-row">
+      <div class="form-label">実際に使った台数</div>
       <select class="form-input" id="recCars">
         <option value="2">2台</option>
         <option value="3">3台</option>
       </select>
     </div>
     <div class="form-row">
-      <div class="form-label">システム提案から変更したDA（ある場合）</div>
-      <input class="form-input" id="recChanged" type="text" placeholder="例：星→山本に変更、野崎を追加">
+      <div class="form-label">システム提案のヘルプ車ドライバー</div>
+      <input class="form-input" id="recSystemHelpers" type="text" readonly style="color:var(--text3)">
     </div>
     <div class="form-row">
-      <div class="form-label">変更した理由</div>
-      <textarea class="form-input" id="recReason" placeholder="例：星さんが体調不良で欠席、野崎さんのエリアが特に難しかったため追加"></textarea>
+      <div class="form-label">実際のヘルプ車ドライバー</div>
+      <input class="form-input" id="recActualHelpers" type="text" placeholder="例：星・山本">
     </div>
     <div class="form-row">
-      <div class="form-label">その日の特記事項</div>
-      <textarea class="form-input" id="recMemo" placeholder="例：雨天で配達難度が高かった、特定エリアで不在が多かった"></textarea>
+      <div class="form-label">ドライバーを変更した理由</div>
+      <select class="form-input" id="recHelperChangeReason">
+        <option value="">変更なし</option>
+        <option value="absent">欠勤・体調不良</option>
+        <option value="skill">スキル・経験を考慮</option>
+        <option value="area">担当エリアとの相性</option>
+        <option value="other">その他</option>
+      </select>
+    </div>
+    <div class="form-row" id="helperReasonDetailRow">
+      <div class="form-label">変更理由の詳細</div>
+      <textarea class="form-input" id="recHelperReasonDetail" placeholder="具体的な理由を入力" style="min-height:52px"></textarea>
+    </div>
+
+    <!-- ヘルプ対象DAの差分 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">ヘルプ対象DAの差分</div>
+    <div class="form-row">
+      <div class="form-label">システム提案の対象DA</div>
+      <input class="form-input" id="recSystemTargets" type="text" readonly style="color:var(--text3)">
     </div>
     <div class="form-row">
-      <div class="form-label">総合評価（このヘルプ配置はうまくいったか）</div>
+      <div class="form-label">追加したDA（提案になかったが追加）</div>
+      <input class="form-input" id="recAddedTargets" type="text" placeholder="例：野崎・堀内">
+    </div>
+    <div class="form-row">
+      <div class="form-label">追加した理由</div>
+      <textarea class="form-input" id="recAddReason" placeholder="例：物量が多くエリアが難しかったため" style="min-height:52px"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-label">外したDA（提案にあったが外した）</div>
+      <input class="form-input" id="recRemovedTargets" type="text" placeholder="例：清水・蔵元">
+    </div>
+    <div class="form-row">
+      <div class="form-label">外した理由</div>
+      <textarea class="form-input" id="recRemoveReason" placeholder="例：本人から問題ないと連絡があったため" style="min-height:52px"></textarea>
+    </div>
+
+    <!-- 引き取り個数の差分 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">引き取り個数の差分</div>
+    <div class="form-row">
+      <div class="form-label">個数を変更したDAと実際の個数</div>
+      <textarea class="form-input" id="recPkgChange" placeholder="例：村井 25→20個（本人希望）、阿部 15→20個（多かったため）" style="min-height:52px"></textarea>
+    </div>
+
+    <!-- 特殊要因 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">その日の特殊要因</div>
+    <div class="form-row">
+      <div class="form-label">特殊要因（複数選択可）</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="specialFactors">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="monday" style="width:14px;height:14px"> 月曜日（荷物多め）</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="event" style="width:14px;height:14px"> イベント・祝日</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="construction" style="width:14px;height:14px"> 工事・通行止め</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="many_absent" style="width:14px;height:14px"> 不在が多かった</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer"><input type="checkbox" value="new_da" style="width:14px;height:14px"> 新人DAがいた</label>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">その他の特記事項</div>
+      <textarea class="form-input" id="recMemo" placeholder="自由記述" style="min-height:52px"></textarea>
+    </div>
+
+    <!-- 総合評価 -->
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)">総合評価</div>
+    <div class="form-row">
+      <div class="form-label">このヘルプ配置はうまくいったか</div>
       <select class="form-input" id="recEval">
         <option value="good">◎ うまくいった</option>
         <option value="ok">○ 概ね問題なし</option>
         <option value="bad">△ 改善が必要</option>
       </select>
     </div>
+    <div class="form-row">
+      <div class="form-label">次回への改善メモ</div>
+      <textarea class="form-input" id="recImprove" placeholder="例：このエリアは雨の日に難易度が上がるため次回は早めにヘルプを入れる" style="min-height:52px"></textarea>
+    </div>
+
     <div class="modal-btns">
       <button class="btn-secondary" onclick="closeModal()">キャンセル</button>
       <button class="btn-primary" onclick="saveRecord()">保存する</button>
@@ -1228,10 +1320,23 @@ function showTab(tab) {
 
 // ===== MODAL =====
 function openModal() {
+  const r = window._lastResult || {};
   document.getElementById('recDate').value = new Date().toISOString().slice(0,10);
-  if (window._lastResult) {
-    document.getElementById('recCars').value = window._lastResult.numCars;
+  document.getElementById('recType').value = currentType;
+
+  // システム提案を自動入力（読み取り専用）
+  if (r.numCars) {
+    document.getElementById('recSystemCars').value = `${r.numCars}台`;
+    document.getElementById('recCars').value = r.numCars;
   }
+  if (r.cars && r.cars.length) {
+    document.getElementById('recSystemHelpers').value = r.cars.map(c => c.driver.name).join('・');
+    document.getElementById('recActualHelpers').value = r.cars.map(c => c.driver.name).join('・');
+  }
+  if (r.allTargets && r.allTargets.length) {
+    document.getElementById('recSystemTargets').value = r.allTargets.map(t => t.name).join('・');
+  }
+
   document.getElementById('recordModal').style.display = 'flex';
 }
 function closeModal() {
@@ -1241,22 +1346,61 @@ function closeModal() {
 // ===== SAVE =====
 function saveRecord() {
   const r = window._lastResult || {};
+
+  // 特殊要因チェックボックス
+  const factors = Array.from(document.querySelectorAll('#specialFactors input:checked')).map(el => el.value);
+
   const record = {
     id: Date.now(),
-    date: document.getElementById('recDate').value,
-    type: currentType,
-    numCars: parseInt(document.getElementById('recCars').value),
-    changed: document.getElementById('recChanged').value.trim(),
-    reason: document.getElementById('recReason').value.trim(),
-    memo: document.getElementById('recMemo').value.trim(),
-    eval: document.getElementById('recEval').value,
-    totalAssign: assignData.length,
-    overCount: r.overDAs ? r.overDAs.length : 0,
-    targets: r.allTargets ? r.allTargets.map(t=>({name:t.name, pkg:t.packages, take:t.takeAmt})) : [],
-    helpers: r.cars ? r.cars.map(c=>c.driver.name) : [],
-    systemCars: r.numCars || 2,
-    changed_from_system: parseInt(document.getElementById('recCars').value) !== (r.numCars||2) || !!document.getElementById('recChanged').value.trim(),
+    date:           document.getElementById('recDate').value,
+    type:           document.getElementById('recType').value,
+    weather:        document.getElementById('recWeather').value,
+
+    // ヘルプ車
+    systemCars:     document.getElementById('recSystemCars').value,
+    numCars:        parseInt(document.getElementById('recCars').value),
+    systemHelpers:  document.getElementById('recSystemHelpers').value,
+    actualHelpers:  document.getElementById('recActualHelpers').value,
+    helperChangeReason: document.getElementById('recHelperChangeReason').value,
+    helperReasonDetail: document.getElementById('recHelperReasonDetail').value.trim(),
+
+    // 対象DA
+    systemTargets:  document.getElementById('recSystemTargets').value,
+    addedTargets:   document.getElementById('recAddedTargets').value.trim(),
+    addReason:      document.getElementById('recAddReason').value.trim(),
+    removedTargets: document.getElementById('recRemovedTargets').value.trim(),
+    removeReason:   document.getElementById('recRemoveReason').value.trim(),
+
+    // 個数
+    pkgChange:      document.getElementById('recPkgChange').value.trim(),
+
+    // 特殊要因・評価
+    specialFactors: factors,
+    memo:           document.getElementById('recMemo').value.trim(),
+    eval:           document.getElementById('recEval').value,
+    improve:        document.getElementById('recImprove').value.trim(),
+
+    // システム計算結果（差分比較用）
+    totalAssign:    assignData.length,
+    overCount:      r.overDAs ? r.overDAs.length : 0,
+    targets:        r.allTargets ? r.allTargets.map(t=>({name:t.name, pkg:t.packages, take:t.takeAmt})) : [],
+    changed_from_system:
+      document.getElementById('recActualHelpers').value !== document.getElementById('recSystemHelpers').value ||
+      !!document.getElementById('recAddedTargets').value.trim() ||
+      !!document.getElementById('recRemovedTargets').value.trim(),
   };
+
+  const records = getRecords();
+  records.unshift(record);
+  localStorage.setItem('dej1_records', JSON.stringify(records));
+  closeModal();
+
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:600;z-index:999;letter-spacing:.04em';
+  toast.textContent = '✓ 記録を保存しました';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
   const records = getRecords();
   records.unshift(record);
   localStorage.setItem('dej1_records', JSON.stringify(records));
@@ -1289,28 +1433,66 @@ function renderHistory() {
     el.innerHTML = `<div class="empty-state"><div class="es-icon">📋</div><div class="es-label">記録がまだありません</div></div>`;
     return;
   }
-  const evalIcon = {good:'◎', ok:'○', bad:'△'};
+  const evalIcon  = {good:'◎', ok:'○', bad:'△'};
   const evalColor = {good:'var(--green)', ok:'var(--accent)', bad:'var(--amber)'};
-  el.innerHTML = records.map(r => `
+  const weatherIcon = {sunny:'☀️', cloudy:'☁️', rainy:'🌧️', heavy_rain:'⛈️', snow:'❄️'};
+  const factorLabel = {monday:'月曜', event:'イベント', construction:'工事', many_absent:'不在多', new_da:'新人DA'};
+
+  el.innerHTML = records.map(r => {
+    const helperChanged = r.actualHelpers && r.systemHelpers && r.actualHelpers !== r.systemHelpers;
+    const hasAddedDA    = !!r.addedTargets;
+    const hasRemovedDA  = !!r.removedTargets;
+    const hasDiff       = helperChanged || hasAddedDA || hasRemovedDA || !!r.pkgChange;
+
+    return `
     <div class="history-card">
       <div class="hc-top">
         <span class="hc-date">${r.date}</span>
-        <span class="hc-type ${r.type==='CX'?'hc-cx':'hc-mx'}">${r.type}</span>
+        <span class="hc-type ${(r.type||'CX')==='CX'?'hc-cx':'hc-mx'}">${r.type||'CX'}</span>
+        <span style="font-size:14px">${weatherIcon[r.weather]||''}</span>
         <span style="font-family:var(--mono);font-size:11px;color:${evalColor[r.eval]};font-weight:600">${evalIcon[r.eval]} ${r.eval==='good'?'うまくいった':r.eval==='ok'?'概ね問題なし':'改善が必要'}</span>
-        ${r.changed_from_system ? `<span class="hc-changed">提案を変更</span>` : ''}
+        ${hasDiff ? `<span class="hc-changed">提案を変更</span>` : ''}
         <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:var(--mono)">${r.numCars}台体制</span>
       </div>
+
       <div class="hc-tags">
-        <span class="hc-tag">アサイン ${r.totalAssign}名</span>
-        <span class="hc-tag">閾値超え ${r.overCount}名</span>
-        <span class="hc-tag">ヘルプ車：${(r.helpers||[]).join('・')||'—'}</span>
-        ${r.targets && r.targets.length ? `<span class="hc-tag">対象：${r.targets.map(t=>t.name).join('・')}</span>` : ''}
+        <span class="hc-tag">アサイン ${r.totalAssign||'—'}名</span>
+        <span class="hc-tag">閾値超え ${r.overCount||'—'}名</span>
+        ${(r.specialFactors||[]).map(f=>`<span class="hc-tag">${factorLabel[f]||f}</span>`).join('')}
       </div>
-      ${r.changed ? `<div class="hc-memo"><span style="color:var(--amber);font-family:var(--mono);font-size:10px;font-weight:600">変更内容：</span> ${r.changed}</div>` : ''}
-      ${r.reason ? `<div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">変更理由：</span> ${r.reason}</div>` : ''}
-      ${r.memo ? `<div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">特記：</span> ${r.memo}</div>` : ''}
+
+      ${helperChanged ? `
+      <div class="hc-memo">
+        <span style="color:var(--amber);font-family:var(--mono);font-size:10px;font-weight:600">ヘルプ車変更：</span>
+        ${r.systemHelpers} → ${r.actualHelpers}
+        ${r.helperReasonDetail ? `<br><span style="color:var(--text3);font-size:11px">理由：${r.helperReasonDetail}</span>` : ''}
+      </div>` : `
+      <div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">ヘルプ車：</span>${r.actualHelpers||r.systemHelpers||'—'}</div>
+      `}
+
+      ${hasAddedDA ? `
+      <div class="hc-memo">
+        <span style="color:var(--green);font-family:var(--mono);font-size:10px;font-weight:600">追加DA：</span>${r.addedTargets}
+        ${r.addReason ? `<br><span style="color:var(--text3);font-size:11px">理由：${r.addReason}</span>` : ''}
+      </div>` : ''}
+
+      ${hasRemovedDA ? `
+      <div class="hc-memo">
+        <span style="color:var(--red);font-family:var(--mono);font-size:10px;font-weight:600">除外DA：</span>${r.removedTargets}
+        ${r.removeReason ? `<br><span style="color:var(--text3);font-size:11px">理由：${r.removeReason}</span>` : ''}
+      </div>` : ''}
+
+      ${r.pkgChange ? `
+      <div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">個数変更：</span>${r.pkgChange}</div>
+      ` : ''}
+
+      ${r.improve ? `
+      <div class="hc-memo"><span style="color:var(--purple);font-family:var(--mono);font-size:10px;font-weight:600">次回改善：</span>${r.improve}</div>
+      ` : ''}
+
+      ${r.memo ? `<div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">特記：</span>${r.memo}</div>` : ''}
     </div>
-  `).join('');
+  `}).join('');
 }
 
 // ===== RENDER STATS =====
