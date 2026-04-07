@@ -861,25 +861,54 @@ function handleAssign(input) {
     assignData = [];
     const header = rows[0];
     const pkgIdx = header.findIndex(h => String(h).includes('Package') || String(h).includes('個数'));
-    const idIdx = header.findIndex(h => String(h).includes('DA_ID') || String(h).includes('ID'));
-    const daIdx = header.findIndex(h => String(h) === 'DA');
+    const idIdx  = header.findIndex(h => String(h).includes('DA_ID') || String(h) === 'ID');
+    const daIdx  = header.findIndex(h => String(h) === 'DA' || String(h).includes('Suggested DA') || String(h).includes('DA名'));
     const routeIdx = header.findIndex(h => String(h).includes('Route'));
+
     for (let i=1; i<rows.length; i++) {
       const row = rows[i];
       if (!row || !row[pkgIdx]) continue;
-      const rawId = String(row[idIdx]||'').trim();
-      const rawDA = String(row[daIdx]||'').trim();
-      const master = MASTER.find(m => m.id === rawId) ||
-                     MASTER.find(m => rawDA.includes(m.name) || m.name.includes(rawDA.split(' ')[0]));
+      const rawId  = String(row[idIdx] || '').trim();
+      const rawDA  = String(row[daIdx] || '').trim();
+
+      // 照合①：DA_IDで完全一致
+      let master = MASTER.find(m => m.id === rawId);
+
+      // 照合②：DA名に苗字が含まれるか
+      if (!master) {
+        master = MASTER.find(m => {
+          const n = m.name.replace(/[（(].*[)）]/g,'').trim();
+          return rawDA.includes(n) || n.includes(rawDA.replace(/\s.*$/,'').trim());
+        });
+      }
+
+      // 照合③：スペース区切りの名前トークンで部分一致
+      if (!master) {
+        const tokens = rawDA.split(/[\s　]+/).filter(t => t.length >= 2);
+        master = MASTER.find(m => tokens.some(t => m.name.includes(t) || t.includes(m.name)));
+      }
+
+      // 表示名：マスタ一致 → マスタ名、未一致 → rawDAから括弧を除去
+      const displayName = master
+        ? master.name
+        : rawDA.replace(/\s*[\(（][^\)）]*[\)）]/g,'').trim();
+
       assignData.push({
-        route: row[routeIdx],
+        route:    row[routeIdx],
         packages: parseInt(row[pkgIdx]),
-        daId: rawId,
-        daRaw: rawDA,
-        master: master || null,
-        name: master ? master.name : rawDA.replace(/\(.*\)/,'').trim(),
+        daId:     rawId,
+        daRaw:    rawDA,
+        master:   master || null,
+        name:     displayName,
       });
     }
+
+    // 照合結果をコンソールに出力（デバッグ用）
+    const matched   = assignData.filter(d => d.master).length;
+    const unmatched = assignData.filter(d => !d.master).map(d => d.daRaw);
+    console.log(`照合結果：${matched}/${assignData.length}名一致`);
+    if (unmatched.length) console.warn('未照合DA:', unmatched);
+
     document.getElementById('assignOk').style.display = 'block';
     document.getElementById('dropAssign').classList.add('active');
     document.getElementById('btnRun').disabled = false;
@@ -897,6 +926,12 @@ function runCalc() {
   const helperDAs = assignData.filter(d => d.master && d.master.isHelper && !d.master.noHelp);
   const pri1Helpers = helperDAs.filter(d => d.master.helperPri === 1);
   const pri2Helpers = helperDAs.filter(d => d.master.helperPri === 2);
+
+  // フォールバック：アサイン表にヘルプ候補がいない場合はデフォルト名で表示
+  const defaultHelperNames = ['星','中村','山本','藤井'];
+  const fallbackHelpers = defaultHelperNames.map(n => ({
+    driver: { name: n, isHelper: true, helperPri: 1 }, targets: []
+  }));
 
   // 非ヘルプ車のDA
   const targetCandidates = assignData.filter(d => {
@@ -966,13 +1001,22 @@ function runCalc() {
   const usedHelpers = new Set();
   const allHelpers = [...pri1Helpers, ...pri2Helpers];
   for (let i=0; i<numCars && i<allHelpers.length; i++) {
-    cars.push({driver: allHelpers[i], targets: []});
+    cars.push({driver: allHelpers[i].master || allHelpers[i], targets: []});
     usedHelpers.add(allHelpers[i].daId);
   }
+  // ヘルプ候補がアサイン表に見つからない場合はデフォルト名で補完
   if (cars.length === 0) {
-    // フォールバック：デフォルト名で表示
-    const defaults = ['星','中村','山本','藤井'].slice(0,numCars);
-    defaults.forEach(n => cars.push({driver:{name:n,isHelper:true}, targets:[]}));
+    defaultHelperNames.slice(0, numCars).forEach(n =>
+      cars.push({ driver: { name: n, isHelper: true }, targets: [] })
+    );
+  } else {
+    // 台数が足りない場合もデフォルト名で補完
+    while (cars.length < numCars) {
+      const used = cars.map(c => c.driver.name);
+      const next = defaultHelperNames.find(n => !used.includes(n));
+      if (!next) break;
+      cars.push({ driver: { name: next, isHelper: true }, targets: [] });
+    }
   }
 
   // ターゲットを距離グループでヘルプ車に振り分け
