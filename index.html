@@ -4,6 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DEJ1 ヘルプ自動計算ツール</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAEBX1VTaNWGrdfmlo0l7iheDvTT6FNQCI",
+    authDomain: "dej1-help.firebaseapp.com",
+    projectId: "dej1-help",
+    storageBucket: "dej1-help.firebasestorage.app",
+    messagingSenderId: "619215110188",
+    appId: "1:619215110188:web:46a046635e9e83e76c5189"
+  };
+
+  const ALLOWED_EMAILS = [
+    "skip.llc.manager@gmail.com",
+    "nariyuu55@gmail.com",
+  ];
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  window._firebaseSignIn = () => auth.signInWithPopup(provider);
+  window._firebaseSignOut = () => auth.signOut();
+
+  // 認証状態を監視：未ログインなら即ブロック
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      if (!ALLOWED_EMAILS.includes(user.email)) {
+        auth.signOut();
+        showAuthScreen('denied', user.email);
+        return;
+      }
+      showApp(user);
+    } else {
+      showAuthScreen('login', null);
+    }
+  });
+
+  function showAuthScreen(mode, email) {
+    const s = document.getElementById('authScreen');
+    const r = document.getElementById('appRoot');
+    if (s) s.style.display = 'flex';
+    if (r) r.style.display = 'none';
+    const msg = document.getElementById('authMsg');
+    const btn = document.getElementById('authBtn');
+    if (mode === 'denied') {
+      if (msg) msg.innerHTML =
+        `<span style="color:#ff5555">⚠ アクセス権限がありません</span><br>
+         <span style="font-size:11px;color:#5a5a72">${email} はアクセスが許可されていません。<br>管理者にお問い合わせください。</span>`;
+      if (btn) btn.style.display = 'none';
+    } else {
+      if (msg) msg.innerHTML = `このツールはメンバー限定です。<br>Googleアカウントでログインしてください。`;
+      if (btn) btn.style.display = 'block';
+    }
+  }
+
+  function showApp(user) {
+    const s = document.getElementById('authScreen');
+    const r = document.getElementById('appRoot');
+    if (s) s.style.display = 'none';
+    if (r) r.style.display = 'block';
+    const info = document.getElementById('userInfo');
+    if (info) info.innerHTML =
+      `<img src="${user.photoURL||''}" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:6px">
+       <span style="font-size:11px;color:#9090a8">${user.email}</span>`;
+  }
+
+  // ボタンのイベントはDOM読み込み後にセット
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('authBtn');
+    const logout = document.getElementById('logoutBtn');
+    if (btn) btn.onclick = () => window._firebaseSignIn();
+    if (logout) logout.onclick = () => window._firebaseSignOut();
+  });
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap');
 
@@ -438,6 +513,54 @@
   .scrollable::-webkit-scrollbar-track { background: transparent; }
   .scrollable::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  #authScreen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .auth-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px 48px;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+  }
+  .auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .auth-logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .auth-logo-text { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: .08em; color: var(--text); }
+  .auth-msg { font-size: 13px; color: var(--text2); line-height: 1.8; margin-bottom: 24px; }
+  .auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: #fff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    padding: 11px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .auth-btn:hover { background: #f8f8f8; }
+  .auth-btn img { width: 18px; height: 18px; }
+
   .tab-row { display: flex; gap: 4px; margin-bottom: 12px; }
   .tab-btn {
     background: var(--bg3);
@@ -466,6 +589,24 @@
 </head>
 <body>
 
+<!-- 認証画面 -->
+<div id="authScreen" style="display:flex">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-dot"></div>
+      <div class="auth-logo-text">DEJ1 HELP DISPATCH</div>
+    </div>
+    <div class="auth-msg" id="authMsg">このツールはメンバー限定です。<br>Googleアカウントでログインしてください。</div>
+    <button class="auth-btn" id="authBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
+      Googleアカウントでログイン
+    </button>
+  </div>
+</div>
+
+<!-- アプリ本体 -->
+<div id="appRoot" style="display:none">
+
 <div class="header">
   <div class="header-dot"></div>
   <h1>DEJ1 HELP DISPATCH</h1>
@@ -474,7 +615,9 @@
     <button class="nav-btn" id="navHistory" onclick="showTab('history')">履歴</button>
     <button class="nav-btn" id="navStats" onclick="showTab('stats')">分析</button>
   </div>
-  <span id="dateLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3)">—</span>
+  <div id="userInfo" style="display:flex;align-items:center;gap:6px;margin-right:10px"></div>
+  <button id="logoutBtn" class="btn-secondary" style="font-size:10px;padding:4px 10px">ログアウト</button>
+  <span id="dateLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px">—</span>
 </div>
 
 <div id="pagCalc" class="page active" style="display:contents">
@@ -1169,5 +1312,6 @@ function renderStats() {
   `;
 }
 </script>
+</div><!-- /appRoot -->
 </body>
 </html>
