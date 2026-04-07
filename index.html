@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEJ1 ヘルプ自動計算ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --bg2: #17171a;
+    --bg3: #1e1e23;
+    --border: #2a2a32;
+    --border2: #363640;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --accent: #4f8eff;
+    --accent2: #2d6bcc;
+    --green: #3dd68c;
+    --green2: #1a6b44;
+    --amber: #f5a623;
+    --amber2: #7a4f0a;
+    --red: #ff5555;
+    --red2: #7a1a1a;
+    --purple: #a78bfa;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .header h1 { font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: .06em; color: var(--text); }
+  .header span { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-left: auto; }
+
+  .main { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 53px); }
+
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .content { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .panel-head {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: var(--text2);
+    text-transform: uppercase;
+  }
+  .panel-head .ph-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .panel-body { padding: 14px; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .upload-zone {
+    border: 1px dashed var(--border2);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--bg);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(79,142,255,.04); }
+  .upload-zone.active { border-color: var(--green); background: rgba(61,214,140,.04); }
+  .upload-zone input { display: none; }
+  .upload-zone .uz-icon { font-size: 20px; margin-bottom: 6px; }
+  .upload-zone .uz-label { font-size: 12px; color: var(--text2); }
+  .upload-zone .uz-sub { font-size: 10px; color: var(--text3); margin-top: 4px; }
+  .upload-zone .uz-ok { font-size: 11px; color: var(--green); margin-top: 4px; font-family: var(--mono); }
+
+  .type-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px;
+    margin-bottom: 12px;
+  }
+  .type-toggle button {
+    background: none;
+    border: none;
+    border-radius: 4px;
+    padding: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .04em;
+  }
+  .type-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-run {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .btn-run:hover { background: var(--accent2); }
+  .btn-run:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
+
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .metric .m-label { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: .06em; margin-bottom: 4px; }
+  .metric .m-val { font-size: 20px; font-family: var(--mono); font-weight: 600; color: var(--text); }
+  .metric.accent .m-val { color: var(--accent); }
+  .metric.green .m-val { color: var(--green); }
+  .metric.amber .m-val { color: var(--amber); }
+  .metric.red .m-val { color: var(--red); }
+
+  .recommend-banner {
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    border: 1px solid;
+  }
+  .recommend-banner.green { background: rgba(61,214,140,.08); border-color: var(--green2); color: var(--green); }
+  .recommend-banner.amber { background: rgba(245,166,35,.08); border-color: var(--amber2); color: var(--amber); }
+  .recommend-banner.red { background: rgba(255,85,85,.08); border-color: var(--red2); color: var(--red); }
+  .recommend-banner .rb-title { font-family: var(--mono); font-weight: 600; font-size: 13px; margin-bottom: 4px; letter-spacing: .04em; }
+
+  .car-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .car-block:last-child { margin-bottom: 0; }
+  .car-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .car-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: .04em;
+  }
+  .car-badge.a { background: rgba(79,142,255,.15); color: var(--accent); border: 1px solid rgba(79,142,255,.3); }
+  .car-badge.b { background: rgba(61,214,140,.15); color: var(--green); border: 1px solid rgba(61,214,140,.3); }
+  .car-badge.c { background: rgba(167,139,250,.15); color: var(--purple); border: 1px solid rgba(167,139,250,.3); }
+  .car-driver { font-size: 13px; font-weight: 700; color: var(--text); }
+  .car-count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--text2); }
+
+  .target-table { width: 100%; border-collapse: collapse; }
+  .target-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding: 6px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .target-table td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text2);
+    vertical-align: middle;
+  }
+  .target-table tr:last-child td { border-bottom: none; }
+  .target-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  .order-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .da-name { font-weight: 700; color: var(--text); font-size: 13px; }
+  .pkg-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .pkg-bar { height: 4px; background: var(--border); border-radius: 2px; flex: 1; overflow: hidden; min-width: 60px; }
+  .pkg-bar-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+  .pkg-val { font-family: var(--mono); font-size: 11px; color: var(--text); min-width: 28px; text-align: right; }
+  .over-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: rgba(255,85,85,.15);
+    color: var(--red);
+    border: 1px solid rgba(255,85,85,.25);
+  }
+  .take-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(79,142,255,.12);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,255,.25);
+  }
+  .lv-a { color: var(--accent); }
+  .lv-b { color: var(--green); }
+  .lv-c { color: var(--amber); }
+
+  .alert-box {
+    background: rgba(255,85,85,.08);
+    border: 1px solid var(--red2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 12px;
+  }
+  .alert-box .ab-title { font-family: var(--mono); font-weight: 600; margin-bottom: 4px; font-size: 11px; letter-spacing: .04em; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: var(--text3);
+    gap: 12px;
+  }
+  .empty-state .es-icon { font-size: 36px; opacity: .4; }
+  .empty-state .es-label { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; }
+
+  .dist-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: var(--mono);
+  }
+  .dist-far { background: rgba(255,85,85,.12); color: var(--red); border: 1px solid rgba(255,85,85,.2); }
+  .dist-mid { background: rgba(245,166,35,.12); color: var(--amber); border: 1px solid rgba(245,166,35,.2); }
+  .dist-near { background: rgba(61,214,140,.12); color: var(--green); border: 1px solid rgba(61,214,140,.2); }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    letter-spacing: .04em;
+    transition: all .15s;
+    text-transform: uppercase;
+  }
+  .nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .nav-btn:hover:not(.active) { border-color: var(--border2); color: var(--text2); }
+
+  .page { display: none; }
+  .page.active { display: contents; }
+
+  .record-modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .record-modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .record-modal h2 { font-family: var(--mono); font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text); letter-spacing: .06em; text-transform: uppercase; }
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 11px; color: var(--text3); font-family: var(--mono); letter-spacing: .06em; margin-bottom: 5px; text-transform: uppercase; }
+  .form-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  textarea.form-input { resize: vertical; min-height: 72px; }
+  select.form-input { cursor: pointer; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    letter-spacing: .04em;
+    transition: all .15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    letter-spacing: .04em;
+    transition: all .15s;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+
+  .history-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .history-card:hover { border-color: var(--border2); }
+  .history-card .hc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .history-card .hc-date { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+  .history-card .hc-type { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; }
+  .hc-cx { background: rgba(79,142,255,.15); color: var(--accent); }
+  .hc-mx { background: rgba(61,214,140,.15); color: var(--green); }
+  .history-card .hc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hc-tag { font-size: 11px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 2px 7px; font-family: var(--mono); }
+  .history-card .hc-memo { font-size: 12px; color: var(--text2); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); line-height: 1.6; }
+  .history-card .hc-changed { display: inline-block; font-size:10px; padding:1px 6px; border-radius:3px; background:rgba(245,166,35,.12); color:var(--amber); border:1px solid rgba(245,166,35,.2); font-family:var(--mono); }
+  .changed-row { background: rgba(245,166,35,.04) !important; }
+  .changed-row td:first-child { border-left: 2px solid var(--amber) !important; }
+
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .stat-card h3 { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+  .stat-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 12px; }
+  .stat-bar-label { width: 60px; color: var(--text2); flex-shrink: 0; text-align: right; }
+  .stat-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+  .stat-bar-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 24px; }
+
+  .scrollable { max-height: 520px; overflow-y: auto; }
+  .scrollable::-webkit-scrollbar { width: 4px; }
+  .scrollable::-webkit-scrollbar-track { background: transparent; }
+  .scrollable::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .tab-row { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tab-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all .15s;
+    text-transform: uppercase;
+  }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .all-da-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .all-da-table th { font-family: var(--mono); font-size: 9px; letter-spacing: .06em; color: var(--text3); text-transform: uppercase; padding: 5px 8px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg3); }
+  .all-da-table td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,.03); color: var(--text2); vertical-align: middle; }
+  .all-da-table tr.over td { color: var(--text); }
+  .all-da-table tr.over td:first-child { border-left: 2px solid var(--red); }
+  .all-da-table tr.helper td:first-child { border-left: 2px solid var(--accent); }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-dot"></div>
+  <h1>DEJ1 HELP DISPATCH</h1>
+  <div style="display:flex;gap:4px;margin-left:auto;margin-right:12px">
+    <button class="nav-btn active" id="navCalc" onclick="showTab('calc')">計算</button>
+    <button class="nav-btn" id="navHistory" onclick="showTab('history')">履歴</button>
+    <button class="nav-btn" id="navStats" onclick="showTab('stats')">分析</button>
+  </div>
+  <span id="dateLabel" style="font-family:var(--mono);font-size:11px;color:var(--text3)">—</span>
+</div>
+
+<div id="pagCalc" class="page active" style="display:contents">
+<div class="main" id="calcLayout">
+  <div class="sidebar">
+
+    <div>
+      <div class="section-label">配送タイプ</div>
+      <div class="type-toggle">
+        <button class="active" id="btnCX" onclick="setType('CX')">CX 午前</button>
+        <button id="btnMX" onclick="setType('MX')">MX 午後</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">アサイン表 (.xlsx)</div>
+      <div class="upload-zone" id="dropAssign" onclick="document.getElementById('fileAssign').click()">
+        <input type="file" id="fileAssign" accept=".xlsx,.xls" onchange="handleAssign(this)">
+        <div class="uz-icon">📋</div>
+        <div class="uz-label">クリックしてアップロード</div>
+        <div class="uz-sub">アサイン表 xlsx</div>
+        <div class="uz-ok" id="assignOk" style="display:none">✓ 読み込み完了</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">ドライバーマスタ (.xlsx)</div>
+      <div class="upload-zone active" id="dropMaster">
+        <div class="uz-icon">👥</div>
+        <div class="uz-label">マスタ読み込み済み</div>
+        <div class="uz-ok" style="display:block">✓ 49名のDAを登録済み</div>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn-run" id="btnRun" onclick="runCalc()" disabled>▶ ヘルプ計算を実行</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="ph-dot" style="background:var(--text3)"></div>
+        ヘルプ車候補DA
+      </div>
+      <div class="panel-body" style="padding:10px 14px">
+        <div style="font-size:11px;color:var(--text2);line-height:2">
+          <span style="color:var(--accent);font-weight:700">★ 星</span>　
+          <span style="color:var(--accent);font-weight:700">中村</span>　
+          <span style="color:var(--accent);font-weight:700">山本</span>　
+          <span style="color:var(--accent);font-weight:700">藤井</span><br>
+          <span style="color:var(--text3)">伊藤・光枝・柏渕（頻度少）</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-family:var(--mono)">
+          ⚠ 鈴木章悟 ヘルプ不可<br>
+          ⚠ 中村→野崎 組み合わせ不可
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="content" id="content">
+    <div class="empty-state">
+      <div class="es-icon">📦</div>
+      <div class="es-label">アサイン表をアップロードして計算を実行してください</div>
+    </div>
+  </div>
+</div>
+</div><!-- /pagCalc -->
+
+<!-- 履歴ページ -->
+<div id="pagHistory" class="page" style="display:none;padding:20px;max-width:900px;margin:0 auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.08em;text-transform:uppercase">過去の記録</div>
+    <button class="btn-secondary" onclick="clearHistory()" style="font-size:10px;padding:5px 10px">履歴をクリア</button>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<!-- 分析ページ -->
+<div id="pagStats" class="page" style="display:none;padding:20px;max-width:900px;margin:0 auto">
+  <div style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px">データ分析</div>
+  <div id="statsContent" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+</div>
+
+<!-- 記録モーダル -->
+<div id="recordModal" class="record-modal-bg" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="record-modal">
+    <h2>今日の結果を記録する</h2>
+    <div class="form-row">
+      <div class="form-label">日付</div>
+      <input class="form-input" id="recDate" type="date">
+    </div>
+    <div class="form-row">
+      <div class="form-label">最終的なヘルプ台数</div>
+      <select class="form-input" id="recCars">
+        <option value="2">2台</option>
+        <option value="3">3台</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-label">システム提案から変更したDA（ある場合）</div>
+      <input class="form-input" id="recChanged" type="text" placeholder="例：星→山本に変更、野崎を追加">
+    </div>
+    <div class="form-row">
+      <div class="form-label">変更した理由</div>
+      <textarea class="form-input" id="recReason" placeholder="例：星さんが体調不良で欠席、野崎さんのエリアが特に難しかったため追加"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-label">その日の特記事項</div>
+      <textarea class="form-input" id="recMemo" placeholder="例：雨天で配達難度が高かった、特定エリアで不在が多かった"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-label">総合評価（このヘルプ配置はうまくいったか）</div>
+      <select class="form-input" id="recEval">
+        <option value="good">◎ うまくいった</option>
+        <option value="ok">○ 概ね問題なし</option>
+        <option value="bad">△ 改善が必要</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveRecord()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ===== MASTER DATA =====
+const MASTER = [
+  {id:'A2XQUH4CDMCKM1',name:'横溝',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A16C2IBKU16FQ4',name:'戸村',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A3KUYV7JI3J627',name:'陳',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A3PMT6MVLIJR9I',name:'平戸',lv:'C',limCX:120,limMX:110,thrCX:130,thrMX:120},
+  {id:'A3CO23IHUII45Z',name:'牧',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A16MGRXWV30DH0',name:'飯田',lv:'C',limCX:100,limMX:90,thrCX:110,thrMX:100},
+  {id:'A3P9B3VXYP2RC',name:'伊藤',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A5D731A8O5TG2',name:'山本',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A1WWG82K7WNYFT',name:'光枝',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A2H0LZU81BXK0I',name:'谷口',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'AZA9573NTQ0TL',name:'熊木',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A27BN1QF4JSWSP',name:'内田',lv:'C',limCX:120,limMX:110,thrCX:130,thrMX:120},
+  {id:'A22RKBO8UZET5I',name:'南波',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'A3HE7PEHTCBHNQ',name:'羽鳥',lv:'B',limCX:120,limMX:110,thrCX:130,thrMX:120},
+  {id:'A33KMTSYHNRC4J',name:'三星',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'A4ZXO1G6HAHI6',name:'志田',lv:'C',limCX:120,limMX:110,thrCX:130,thrMX:120},
+  {id:'A1HYHQ0BM8QVWA',name:'星',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A1MZV5O1T885K3',name:'安川',lv:'B',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A1OL5NM6BJHQ0Y',name:'谷',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'ADVNFNDSZ5W9C',name:'阿部',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'A3LTW7WKSZF1ON',name:'押味',lv:'C',limCX:100,limMX:90,thrCX:135,thrMX:125},
+  {id:'A3PIGWZSZMGEUM',name:'鈴木（章）',lv:'A',limCX:140,limMX:130,thrCX:125,thrMX:115,noHelp:true},
+  {id:'A29ILJ24T7178I',name:'川中嶋',lv:'A',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A1P7OV7PG9VV27',name:'中村',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125,isHelper:true,helperPri:1},
+  {id:'A1PO48HSX8AQPD',name:'清水',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'A3V2JOTFX1Y5ZJ',name:'蔵元',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'A2AX202KLDDYTW',name:'上地',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'AO1UREA190P3I',name:'大島',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'A137YCTCSEAHQ7',name:'ジェエム',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A1FNC6RDYQ4PNI',name:'藤井',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125,isHelper:true,helperPri:1},
+  {id:'A36PN7SJFYI3EJ',name:'村井',lv:'C',limCX:100,limMX:90,thrCX:120,thrMX:110},
+  {id:'A32P9DXE786QYZ',name:'板原',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'ATAORVBHVPWHV',name:'宮本',lv:'B',limCX:120,limMX:110,thrCX:125,thrMX:115},
+  {id:'A2TEX8CPK0WKY',name:'佐藤明土',lv:'B',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A3IESEM33PKEFY',name:'相川',lv:'C',limCX:120,limMX:110,thrCX:130,thrMX:120},
+  {id:'A2L83EJR4OFEB',name:'鈴木琢磨',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'A3CKFAMKMX460N',name:'柏渕',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125,isHelper:true,helperPri:2},
+  {id:'A1V3RAA1914EKQ',name:'小林',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125},
+  {id:'A1KVF0BGJ6F1B',name:'五十嵐',lv:'A',limCX:140,limMX:130,thrCX:135,thrMX:125},
+  {id:'A1QOYOELUIFOPE',name:'中',lv:'C',limCX:60,limMX:50,thrCX:65,thrMX:55},
+  {id:'A2CJGWVAAHZMMC',name:'吉田',lv:'C',limCX:90,limMX:80,thrCX:80,thrMX:70},
+  {id:'ACV9Y7G77DPOT',name:'高城',lv:'B',limCX:130,limMX:120,thrCX:135,thrMX:125},
+  {id:'A23V7Y6ELN0LWK',name:'岡本',lv:'C',limCX:60,limMX:50,thrCX:65,thrMX:55},
+  {id:'AO8B0KO3U8455',name:'野崎',lv:'C',limCX:100,limMX:90,thrCX:110,thrMX:100,nozaki:true},
+  {id:'A2NP048LKN7AEO',name:'堀内',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'A2TJ5ZROXX5K04',name:'前田',lv:'B',limCX:120,limMX:110,thrCX:135,thrMX:125},
+  {id:'A1UYO1T4ULATVM',name:'坂田',lv:'C',limCX:100,limMX:90,thrCX:110,thrMX:100},
+  {id:'A3GFPJ8ZPFVE27',name:'宮下',lv:'C',limCX:60,limMX:50,thrCX:65,thrMX:55},
+  {id:'A2ZQZD7ZO9YHCH',name:'木村',lv:'C',limCX:50,limMX:40,thrCX:55,thrMX:45},
+  // 星・中村・山本
+  {id:'STAR',name:'星',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125,isHelper:true,helperPri:1},
+  {id:'A5D731A8O5TG2_2',name:'山本',lv:'A',limCX:150,limMX:140,thrCX:135,thrMX:125,isHelper:true,helperPri:1},
+];
+// 星はA1HYHQ0BM8QVWAにhelperフラグを付ける
+MASTER.find(d=>d.id==='A1HYHQ0BM8QVWA').isHelper = true;
+MASTER.find(d=>d.id==='A1HYHQ0BM8QVWA').helperPri = 1;
+MASTER.find(d=>d.id==='A5D731A8O5TG2').isHelper = true;
+MASTER.find(d=>d.id==='A5D731A8O5TG2').helperPri = 1;
+
+// 距離ランクマスタ（地図上の位置から推定、1=遠い 5=近い）
+const DIST_RANK = {
+  '牧':1,'村井':1,'明村':1,'博牧':1,
+  '光柏':1,'章鈴':2,'翔堀':2,'塚鈴':2,'勝羽':2,
+  '和三':2,'野雅':2,'宏蔵':2,'光蛸':2,'留五':2,
+  '孝阿':1,'明佐':1,'明佐藤':1,
+  '優前':3,'皓横':3,'皓藤':3,'駿小':3,'オジ':3,
+  '宗谷':3,'浩伊':3,'学押':4,'昌安':4,'厚中':4,
+  '佑星':4,'宗孝谷':3,'谷':3,'阿部':3,
+  '堀内':2,'前田':3,'三星':3,'清水':3,'蔵元':3,
+  '谷口':3,'羽鳥':3,'押味':4,'安川':4,
+  '五十嵐':3,'小林':3,'川中嶋':4,'ジェエム':4,
+  '伊藤':4,'相川':4,'佐藤明土':3,
+  '野崎':3,'鈴木琢磨':3,
+};
+
+function getDistRank(name) {
+  for (const [k,v] of Object.entries(DIST_RANK)) {
+    if (name.includes(k) || k.includes(name)) return v;
+  }
+  return 3;
+}
+function getDistLabel(rank) {
+  if (rank <= 1) return '<span class="dist-tag dist-far">遠方</span>';
+  if (rank <= 2) return '<span class="dist-tag dist-far">やや遠</span>';
+  if (rank <= 3) return '<span class="dist-tag dist-mid">中距離</span>';
+  return '<span class="dist-tag dist-near">近距離</span>';
+}
+
+let assignData = [];
+let currentType = 'CX';
+
+function setType(t) {
+  currentType = t;
+  document.getElementById('btnCX').classList.toggle('active', t==='CX');
+  document.getElementById('btnMX').classList.toggle('active', t==='MX');
+}
+
+function handleAssign(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    assignData = [];
+    const header = rows[0];
+    const pkgIdx = header.findIndex(h => String(h).includes('Package') || String(h).includes('個数'));
+    const idIdx = header.findIndex(h => String(h).includes('DA_ID') || String(h).includes('ID'));
+    const daIdx = header.findIndex(h => String(h) === 'DA');
+    const routeIdx = header.findIndex(h => String(h).includes('Route'));
+    for (let i=1; i<rows.length; i++) {
+      const row = rows[i];
+      if (!row || !row[pkgIdx]) continue;
+      const rawId = String(row[idIdx]||'').trim();
+      const rawDA = String(row[daIdx]||'').trim();
+      const master = MASTER.find(m => m.id === rawId) ||
+                     MASTER.find(m => rawDA.includes(m.name) || m.name.includes(rawDA.split(' ')[0]));
+      assignData.push({
+        route: row[routeIdx],
+        packages: parseInt(row[pkgIdx]),
+        daId: rawId,
+        daRaw: rawDA,
+        master: master || null,
+        name: master ? master.name : rawDA.replace(/\(.*\)/,'').trim(),
+      });
+    }
+    document.getElementById('assignOk').style.display = 'block';
+    document.getElementById('dropAssign').classList.add('active');
+    document.getElementById('btnRun').disabled = false;
+    document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('ja-JP');
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function runCalc() {
+  if (!assignData.length) return;
+  const isCX = currentType === 'CX';
+  const thrKey = isCX ? 'thrCX' : 'thrMX';
+
+  // ヘルプ車候補（アサイン表に出勤しているhelperDA）
+  const helperDAs = assignData.filter(d => d.master && d.master.isHelper && !d.master.noHelp);
+  const pri1Helpers = helperDAs.filter(d => d.master.helperPri === 1);
+  const pri2Helpers = helperDAs.filter(d => d.master.helperPri === 2);
+
+  // 非ヘルプ車のDA
+  const targetCandidates = assignData.filter(d => {
+    if (!d.master) return false;
+    if (d.master.noHelp) return false;
+    if (d.master.isHelper) return false;
+    return true;
+  });
+
+  // 閾値超えDA抽出
+  let overDAs = targetCandidates.filter(d => {
+    const thr = d.master[thrKey];
+    return d.packages > thr;
+  }).map(d => ({
+    ...d,
+    thr: d.master[thrKey],
+    over: d.packages - d.master[thrKey],
+    distRank: getDistRank(d.name),
+    takeAmt: 0,
+  }));
+
+  // 優先度スコア：超過量 × 距離係数（遠いほど高い）× レベル係数
+  const lvScore = {A:1.0, B:1.2, C:1.5};
+  const distScore = r => [0, 3.0, 2.5, 2.0, 1.5, 1.0][r] || 1.5;
+  overDAs.forEach(d => {
+    d.score = d.over * distScore(d.distRank) * (lvScore[d.master.lv] || 1.2);
+  });
+  overDAs.sort((a,b) => b.score - a.score);
+
+  // 補完ルール：3名以下なら130個超・遠方からも追加
+  let supplementDAs = [];
+  if (overDAs.length <= 3) {
+    const supCandidates = targetCandidates.filter(d => {
+      const already = overDAs.find(o => o.daId === d.daId);
+      if (already) return false;
+      return d.packages > 130 && getDistRank(d.name) <= 2;
+    }).map(d => ({
+      ...d,
+      thr: d.master[thrKey],
+      over: 0,
+      distRank: getDistRank(d.name),
+      takeAmt: 15,
+      isSupplement: true,
+    }));
+    supplementDAs = supCandidates.slice(0,3);
+  }
+
+  const allTargets = [...overDAs, ...supplementDAs];
+
+  // 台数決定
+  const totalOver = overDAs.reduce((s,d) => s+d.over, 0);
+  let numCars = 2;
+  let carReason = '通常通り2台で対応可能です。';
+  let carColor = 'green';
+  if (overDAs.length > 10 || totalOver > 500) {
+    numCars = 3;
+    carReason = `閾値超えDA ${overDAs.length}名・超過合計 ${totalOver}個のため3台を推奨します。`;
+    carColor = 'red';
+  } else if (overDAs.length > 7 || totalOver > 300) {
+    numCars = 3;
+    carReason = `閾値超えDA ${overDAs.length}名・超過合計 ${totalOver}個のため3台を推奨します。`;
+    carColor = 'amber';
+  }
+
+  // ヘルプ車選定
+  const cars = [];
+  const usedHelpers = new Set();
+  const allHelpers = [...pri1Helpers, ...pri2Helpers];
+  for (let i=0; i<numCars && i<allHelpers.length; i++) {
+    cars.push({driver: allHelpers[i], targets: []});
+    usedHelpers.add(allHelpers[i].daId);
+  }
+  if (cars.length === 0) {
+    // フォールバック：デフォルト名で表示
+    const defaults = ['星','中村','山本','藤井'].slice(0,numCars);
+    defaults.forEach(n => cars.push({driver:{name:n,isHelper:true}, targets:[]}));
+  }
+
+  // ターゲットを距離グループでヘルプ車に振り分け
+  // ソート済みターゲットを順番にラウンドロビン的に分配（地図方向考慮は距離ランクで代用）
+  allTargets.forEach((t,i) => {
+    const carIdx = i % cars.length;
+    // 中村→野崎制約チェック
+    const car = cars[carIdx];
+    if (car.driver.name === '中村' && t.name === '野崎') {
+      // 別の車に回す
+      const altIdx = (carIdx + 1) % cars.length;
+      if (cars[altIdx].targets.length < 5) cars[altIdx].targets.push(t);
+    } else if (car.targets.length < 5) {
+      car.targets.push(t);
+    }
+  });
+
+  // 各ターゲットの引き取り個数算出
+  cars.forEach(car => {
+    car.targets.forEach(t => {
+      if (t.isSupplement) { t.takeAmt = 15; return; }
+      let take = Math.max(15, Math.min(25, t.over + 2));
+      t.takeAmt = take;
+    });
+    // 遠い順にソート（巡回順）
+    car.targets.sort((a,b) => a.distRank - b.distRank);
+  });
+
+  renderResult(cars, overDAs, supplementDAs, allTargets, numCars, carReason, carColor, isCX, totalOver);
+}
+
+function renderResult(cars, overDAs, supplementDAs, allTargets, numCars, carReason, carColor, isCX, totalOver) {
+  const totalTake = allTargets.reduce((s,d) => s+d.takeAmt, 0);
+  const alerts = [];
+  if (cars.length < numCars) alerts.push(`ヘルプ車候補が${cars.length}台分しか確認できませんでした。シフトを確認してください。`);
+  allTargets.forEach(t => { if (t.takeAmt > 25) alerts.push(`${t.name}さんの引き取り個数(${t.takeAmt}個)が25個を超えています。`); });
+
+  const carLabels = ['A','B','C'];
+  const carColors = ['a','b','c'];
+
+  let html = `
+  <div class="metric-grid">
+    <div class="metric accent"><div class="m-label">ASSIGN COUNT</div><div class="m-val">${assignData.length}</div></div>
+    <div class="metric ${overDAs.length>7?'red':overDAs.length>4?'amber':'green'}"><div class="m-label">閾値超えDA</div><div class="m-val">${overDAs.length}</div></div>
+    <div class="metric amber"><div class="m-label">超過個数合計</div><div class="m-val">${totalOver}</div></div>
+    <div class="metric ${numCars===3?'amber':'green'}"><div class="m-label">推奨ヘルプ車</div><div class="m-val">${numCars}台</div></div>
+  </div>
+
+  <div class="recommend-banner ${carColor}">
+    <div class="rb-title">▶ ${numCars}台体制を推奨</div>
+    ${carReason}
+    ${supplementDAs.length>0?`<br>補完ルール適用：${supplementDAs.map(d=>d.name).join('・')}（130個超・遠方）を追加`:''}
+  </div>
+  `;
+
+  // ヘルプ車ブロック
+  html += `<div class="panel"><div class="panel-head"><div class="ph-dot" style="background:var(--accent)"></div>ヘルプ車割り当て</div><div class="panel-body" style="padding:12px">`;
+  cars.forEach((car,i) => {
+    const totalTakeInCar = car.targets.reduce((s,t)=>s+t.takeAmt,0);
+    html += `
+    <div class="car-block">
+      <div class="car-head">
+        <span class="car-badge ${carColors[i]}">ヘルプ車 ${carLabels[i]}</span>
+        <span class="car-driver">${car.driver.name}</span>
+        <span class="car-count">${car.targets.length}名担当 / 合計${totalTakeInCar}個引き取り</span>
+      </div>
+      <table class="target-table">
+        <thead><tr>
+          <th style="width:36px">順</th>
+          <th>DA名</th>
+          <th>Lv</th>
+          <th>アサイン</th>
+          <th>超過</th>
+          <th>引き取り</th>
+          <th>距離</th>
+        </tr></thead>
+        <tbody>
+    `;
+    if (car.targets.length === 0) {
+      html += `<tr><td colspan="7" style="color:var(--text3);font-style:italic;padding:12px 14px">担当なし</td></tr>`;
+    }
+    car.targets.forEach((t,j) => {
+      const lv = t.master ? t.master.lv : '?';
+      const lvClass = lv==='A'?'lv-a':lv==='B'?'lv-b':'lv-c';
+      const pct = Math.min(100, Math.round(t.packages / 150 * 100));
+      const barColor = t.packages > (t.master?.[isCX?'thrCX':'thrMX']||135) ? 'var(--red)' : 'var(--accent)';
+      const overTxt = t.isSupplement ? '—（補完）' : `<span class="over-badge">+${t.over}</span>`;
+      html += `
+        <tr>
+          <td><span class="order-num">${j+1}</span></td>
+          <td><span class="da-name">${t.name}</span></td>
+          <td><span class="${lvClass}" style="font-family:var(--mono);font-weight:700;font-size:12px">${lv}</span></td>
+          <td>
+            <div class="pkg-bar-wrap">
+              <div class="pkg-bar"><div class="pkg-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+              <span class="pkg-val">${t.packages}</span>
+            </div>
+          </td>
+          <td>${overTxt}</td>
+          <td><span class="take-badge">${t.takeAmt}個</span></td>
+          <td>${getDistLabel(t.distRank)}</td>
+        </tr>
+      `;
+    });
+    html += `</tbody></table></div>`;
+  });
+  html += `</div></div>`;
+
+  // アラート
+  if (alerts.length > 0) {
+    html += `<div class="alert-box"><div class="ab-title">⚠ ALERTS</div>${alerts.map(a=>`• ${a}`).join('<br>')}</div>`;
+  }
+
+  // 全DAリスト
+  html += `
+  <div class="panel">
+    <div class="panel-head"><div class="ph-dot" style="background:var(--text3)"></div>全DAアサイン一覧</div>
+    <div class="panel-body" style="padding:0">
+      <div class="scrollable">
+        <table class="all-da-table">
+          <thead><tr>
+            <th>DA名</th><th>Route</th><th>Lv</th><th>個数</th><th>閾値</th><th>超過</th><th>ステータス</th>
+          </tr></thead>
+          <tbody>
+  `;
+  const sortedAssign = [...assignData].sort((a,b) => b.packages - a.packages);
+  sortedAssign.forEach(d => {
+    const m = d.master;
+    const thr = m ? m[isCX?'thrCX':'thrMX'] : null;
+    const over = thr !== null ? d.packages - thr : null;
+    const isOver = over !== null && over > 0;
+    const isHlp = m && m.isHelper;
+    const isNoHelp = m && m.noHelp;
+    let statusHtml = '';
+    if (isNoHelp) statusHtml = `<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">ヘルプ無し</span>`;
+    else if (isHlp) statusHtml = `<span style="font-size:10px;color:var(--accent);font-family:var(--mono)">▲ ヘルプ車候補</span>`;
+    else if (isOver) statusHtml = `<span style="font-size:10px;color:var(--red);font-family:var(--mono)">● ヘルプ対象</span>`;
+    else statusHtml = `<span style="font-size:10px;color:var(--text3);font-family:var(--mono)">OK</span>`;
+    const lvClass = !m?'':m.lv==='A'?'lv-a':m.lv==='B'?'lv-b':'lv-c';
+    html += `
+      <tr class="${isOver?'over':''}${isHlp?' helper':''}">
+        <td style="font-weight:${isOver||isHlp?'700':'400'}">${d.name}</td>
+        <td style="font-family:var(--mono);color:var(--text3)">${d.route||'—'}</td>
+        <td class="${lvClass}" style="font-family:var(--mono);font-weight:600">${m?m.lv:'?'}</td>
+        <td style="font-family:var(--mono);font-weight:${isOver?'700':'400'};color:${isOver?'var(--red)':'var(--text2)'}">${d.packages}</td>
+        <td style="font-family:var(--mono);color:var(--text3)">${thr||'—'}</td>
+        <td style="font-family:var(--mono);color:${isOver?'var(--red)':'var(--text3)'}">${over!==null&&over>0?'+'+over:'—'}</td>
+        <td>${statusHtml}</td>
+      </tr>
+    `;
+  });
+  html += `</tbody></table></div></div></div>`;
+
+  document.getElementById('content').innerHTML = html;
+
+  // 記録ボタンを追加
+  const recBtn = document.createElement('button');
+  recBtn.className = 'btn-primary';
+  recBtn.style.cssText = 'width:100%;margin-top:4px;padding:12px;font-size:12px;letter-spacing:.06em';
+  recBtn.textContent = '📝 今日の結果を記録する';
+  recBtn.onclick = openModal;
+  document.getElementById('content').appendChild(recBtn);
+
+  // 最新の計算結果をセッションに保持
+  window._lastResult = { cars, overDAs, allTargets, numCars, isCX };
+}
+
+// ===== TAB =====
+function showTab(tab) {
+  ['calc','history','stats'].forEach(t => {
+    document.getElementById('pagCalc').style.display    = t==='calc'    ? 'contents' : 'none';
+    document.getElementById('pagHistory').style.display = t==='history' ? 'block'    : 'none';
+    document.getElementById('pagStats').style.display   = t==='stats'   ? 'block'    : 'none';
+    document.getElementById('nav'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+  });
+  if (tab==='history') renderHistory();
+  if (tab==='stats')   renderStats();
+}
+
+// ===== MODAL =====
+function openModal() {
+  document.getElementById('recDate').value = new Date().toISOString().slice(0,10);
+  if (window._lastResult) {
+    document.getElementById('recCars').value = window._lastResult.numCars;
+  }
+  document.getElementById('recordModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('recordModal').style.display = 'none';
+}
+
+// ===== SAVE =====
+function saveRecord() {
+  const r = window._lastResult || {};
+  const record = {
+    id: Date.now(),
+    date: document.getElementById('recDate').value,
+    type: currentType,
+    numCars: parseInt(document.getElementById('recCars').value),
+    changed: document.getElementById('recChanged').value.trim(),
+    reason: document.getElementById('recReason').value.trim(),
+    memo: document.getElementById('recMemo').value.trim(),
+    eval: document.getElementById('recEval').value,
+    totalAssign: assignData.length,
+    overCount: r.overDAs ? r.overDAs.length : 0,
+    targets: r.allTargets ? r.allTargets.map(t=>({name:t.name, pkg:t.packages, take:t.takeAmt})) : [],
+    helpers: r.cars ? r.cars.map(c=>c.driver.name) : [],
+    systemCars: r.numCars || 2,
+    changed_from_system: parseInt(document.getElementById('recCars').value) !== (r.numCars||2) || !!document.getElementById('recChanged').value.trim(),
+  };
+  const records = getRecords();
+  records.unshift(record);
+  localStorage.setItem('dej1_records', JSON.stringify(records));
+  closeModal();
+
+  // 保存完了トースト
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:600;z-index:999;letter-spacing:.04em';
+  toast.textContent = '✓ 記録を保存しました';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function getRecords() {
+  try { return JSON.parse(localStorage.getItem('dej1_records') || '[]'); }
+  catch { return []; }
+}
+
+function clearHistory() {
+  if (!confirm('履歴をすべて削除しますか？')) return;
+  localStorage.removeItem('dej1_records');
+  renderHistory();
+}
+
+// ===== RENDER HISTORY =====
+function renderHistory() {
+  const records = getRecords();
+  const el = document.getElementById('historyList');
+  if (!records.length) {
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">📋</div><div class="es-label">記録がまだありません</div></div>`;
+    return;
+  }
+  const evalIcon = {good:'◎', ok:'○', bad:'△'};
+  const evalColor = {good:'var(--green)', ok:'var(--accent)', bad:'var(--amber)'};
+  el.innerHTML = records.map(r => `
+    <div class="history-card">
+      <div class="hc-top">
+        <span class="hc-date">${r.date}</span>
+        <span class="hc-type ${r.type==='CX'?'hc-cx':'hc-mx'}">${r.type}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:${evalColor[r.eval]};font-weight:600">${evalIcon[r.eval]} ${r.eval==='good'?'うまくいった':r.eval==='ok'?'概ね問題なし':'改善が必要'}</span>
+        ${r.changed_from_system ? `<span class="hc-changed">提案を変更</span>` : ''}
+        <span style="margin-left:auto;font-size:10px;color:var(--text3);font-family:var(--mono)">${r.numCars}台体制</span>
+      </div>
+      <div class="hc-tags">
+        <span class="hc-tag">アサイン ${r.totalAssign}名</span>
+        <span class="hc-tag">閾値超え ${r.overCount}名</span>
+        <span class="hc-tag">ヘルプ車：${(r.helpers||[]).join('・')||'—'}</span>
+        ${r.targets && r.targets.length ? `<span class="hc-tag">対象：${r.targets.map(t=>t.name).join('・')}</span>` : ''}
+      </div>
+      ${r.changed ? `<div class="hc-memo"><span style="color:var(--amber);font-family:var(--mono);font-size:10px;font-weight:600">変更内容：</span> ${r.changed}</div>` : ''}
+      ${r.reason ? `<div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">変更理由：</span> ${r.reason}</div>` : ''}
+      ${r.memo ? `<div class="hc-memo"><span style="color:var(--text3);font-family:var(--mono);font-size:10px">特記：</span> ${r.memo}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ===== RENDER STATS =====
+function renderStats() {
+  const records = getRecords();
+  const el = document.getElementById('statsContent');
+  if (records.length < 2) {
+    el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">📊</div><div class="es-label">記録が2件以上になると分析できます</div></div>`;
+    return;
+  }
+
+  // 変更頻度分析
+  const changedCount = records.filter(r=>r.changed_from_system).length;
+  const changedRate = Math.round(changedCount/records.length*100);
+
+  // 台数分布
+  const car2 = records.filter(r=>r.numCars===2).length;
+  const car3 = records.filter(r=>r.numCars===3).length;
+
+  // 評価分布
+  const evalCounts = {good:0, ok:0, bad:0};
+  records.forEach(r => evalCounts[r.eval] = (evalCounts[r.eval]||0)+1);
+
+  // よく変更されたDA（変更理由から頻出名を抽出）
+  const nameFreq = {};
+  records.filter(r=>r.changed).forEach(r => {
+    const names = ['星','中村','山本','藤井','伊藤','光枝','柏渕','野崎'];
+    names.forEach(n => { if(r.changed.includes(n)||r.reason.includes(n)) nameFreq[n]=(nameFreq[n]||0)+1; });
+  });
+  const topNames = Object.entries(nameFreq).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  // 平均閾値超えDA数
+  const avgOver = Math.round(records.reduce((s,r)=>s+r.overCount,0)/records.length*10)/10;
+
+  el.innerHTML = `
+    <div class="stat-card">
+      <h3>提案変更率</h3>
+      <div style="font-size:32px;font-family:var(--mono);font-weight:600;color:${changedRate>40?'var(--amber)':'var(--green)'};margin-bottom:8px">${changedRate}%</div>
+      <div style="font-size:12px;color:var(--text3)">${records.length}件中 ${changedCount}件でシステム提案を変更</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">${changedRate<30?'✓ システム精度が高い状態です':'変更理由を記録しておくと精度改善に役立ちます'}</div>
+    </div>
+
+    <div class="stat-card">
+      <h3>ヘルプ台数の分布</h3>
+      <div class="stat-bar-row">
+        <div class="stat-bar-label">2台</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.round(car2/records.length*100)}%;background:var(--accent)"></div></div>
+        <div class="stat-bar-val">${car2}日</div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="stat-bar-label">3台</div>
+        <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.round(car3/records.length*100)}%;background:var(--amber)"></div></div>
+        <div class="stat-bar-val">${car3}日</div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">3台率：${Math.round(car3/records.length*100)}%　平均閾値超えDA：${avgOver}名</div>
+    </div>
+
+    <div class="stat-card">
+      <h3>配置の評価</h3>
+      ${[['good','◎ うまくいった','var(--green)'],['ok','○ 概ね問題なし','var(--accent)'],['bad','△ 改善が必要','var(--amber)']].map(([k,label,color])=>`
+        <div class="stat-bar-row">
+          <div class="stat-bar-label" style="width:80px;font-size:10px">${label.slice(2)}</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${records.length?Math.round((evalCounts[k]||0)/records.length*100):0}%;background:${color}"></div></div>
+          <div class="stat-bar-val">${evalCounts[k]||0}日</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="stat-card">
+      <h3>変更頻度の高いDA</h3>
+      ${topNames.length ? topNames.map(([name,cnt])=>`
+        <div class="stat-bar-row">
+          <div class="stat-bar-label">${name}</div>
+          <div class="stat-bar-wrap"><div class="stat-bar-fill" style="width:${Math.round(cnt/records.length*100)}%"></div></div>
+          <div class="stat-bar-val">${cnt}回</div>
+        </div>`).join('') : `<div style="font-size:12px;color:var(--text3)">変更理由の記録が増えると表示されます</div>`}
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">頻出DAに関するルールを見直すと精度が上がります</div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
